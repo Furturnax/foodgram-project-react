@@ -6,6 +6,8 @@ from core.validators import username_validator
 
 
 class User(AbstractUser):
+    """Модель переопределенного класса User."""
+
     email = models.EmailField(
         'Электронная почта',
         max_length=LENGTH_EMAILFIELD,
@@ -44,3 +46,37 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
+
+
+class Follow(models.Model):
+    """Модель класса Follow."""
+
+    user = models.ForeignKey(
+        User,
+        verbose_name='Подписчик',
+        on_delete=models.CASCADE,
+        related_name='subscriber',
+    )
+    following = models.ForeignKey(
+        User,
+        verbose_name='Автор',
+        on_delete=models.CASCADE,
+        related_name='following',
+    )
+
+    class Meta:
+        verbose_name = 'подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = (
+            models.UniqueConstraint(
+                name='%(app_label)s_%(class)s_unique_relationships',
+                fields=('user', 'following'),
+            ),
+            models.CheckConstraint(
+                name='%(app_label)s_%(class)s_prevent_self_follow',
+                check=~models.Q(user=models.F('following')),
+            ),
+        )
+
+    def __str__(self):
+        return (f'{self.user} подписан на {self.following}')

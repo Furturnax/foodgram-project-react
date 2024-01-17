@@ -1,3 +1,20 @@
-from django.shortcuts import render
+from djoser.views import UserViewSet as DjoserUserViewSet
+from rest_framework import permissions
 
-# Create your views here.
+from api.serializers import UserSerializer
+from users.models import User
+
+
+class UserViewSet(DjoserUserViewSet):
+    """Вьюсет для работы с пользователями."""
+
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    http_method_names = ('get', 'post', 'delete')
+
+    def get_permissions(self):
+        """Дает доступ аутентифицированным пользователям."""
+
+        if self.action in ('me',):
+            return (permissions.IsAuthenticated(),)
+        return (permissions.AllowAny(),)
