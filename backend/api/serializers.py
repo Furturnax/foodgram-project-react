@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from recipes.models import Tag
 
 from users.models import Follow, User
 
@@ -32,3 +33,16 @@ class UserSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
         return Follow.objects.filter(user=user, following=following).exists()
+
+
+class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор модели тега."""
+
+    class Meta:
+        model = Tag
+        fields = (
+            'id',
+            'name',
+            'color',
+            'slug'
+        )

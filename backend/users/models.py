@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-from core.consts import LENGTH_CHARFIELD, LENGTH_EMAILFIELD
+from core.consts import LENGTH_USER_CHARFIELD, LENGTH_USER_EMAILFIELD
 from core.validators import username_validator
 
 
@@ -10,30 +10,30 @@ class User(AbstractUser):
 
     email = models.EmailField(
         'Электронная почта',
-        max_length=LENGTH_EMAILFIELD,
+        max_length=LENGTH_USER_EMAILFIELD,
         unique=True,
         help_text=(
             'Укажите уникальный юзернейм. Может содержать до '
-            f'{LENGTH_EMAILFIELD} символов.'
+            f'{LENGTH_USER_EMAILFIELD} символов.'
         ),
     )
     username = models.CharField(
         'Имя пользователя',
-        max_length=LENGTH_CHARFIELD,
+        max_length=LENGTH_USER_CHARFIELD,
         unique=True,
         validators=(username_validator,),
     )
     first_name = models.CharField(
         'Имя',
-        max_length=LENGTH_CHARFIELD,
+        max_length=LENGTH_USER_CHARFIELD,
     )
     last_name = models.CharField(
         'Фамилия',
-        max_length=LENGTH_CHARFIELD,
+        max_length=LENGTH_USER_CHARFIELD,
     )
     password = models.CharField(
         'Пароль',
-        max_length=LENGTH_CHARFIELD,
+        max_length=LENGTH_USER_CHARFIELD,
     )
 
     class Meta:
