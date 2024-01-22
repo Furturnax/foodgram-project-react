@@ -1,3 +1,4 @@
+from django.db.models import F
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -184,10 +185,14 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def get_ingredients(self, obj):
-        """Возвращает список ингредиентов рецепта."""
-        ingredients = obj.ingredients.all()
-        return IngredientSerializer(ingredients, many=True).data
+    def get_ingredients(self, recipe):
+        """Получает ингредиенты рецепта с полем amount."""
+        return recipe.ingredients.values(
+            'id',
+            'name',
+            'measurement_unit',
+            amount=F('recipe_ingredient__amount')
+        )
 
     def get_is_favorited(self, obj):
         """Проверяет наличие рецепта в избранном."""
