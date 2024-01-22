@@ -17,7 +17,7 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):
-    """Настройка раздела Подписки."""
+    """Интерфейс управления подписками."""
 
     list_display = ('following', 'user')
     search_fields = ('following',)

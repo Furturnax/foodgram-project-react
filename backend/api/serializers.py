@@ -1,5 +1,6 @@
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from recipes.models import Ingredient, Tag
+from recipes.models import Ingredient, Recipe, Tag
 
 from users.models import Follow, User
 
@@ -68,4 +69,45 @@ class IngredientSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'measurement_unit'
+        )
+
+
+class RecipeWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания рецепта."""
+
+    ingredients = IngredientSerializer(many=True)
+    tags = TagSerializer(many=True)
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time',
+        )
+
+
+class RecipeReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для получения рецепта."""
+
+    ingredients = IngredientSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    image = Base64ImageField()
+    author = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
         )
