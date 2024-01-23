@@ -1,3 +1,6 @@
+import csv
+
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -16,7 +19,7 @@ from api.serializers import (
     TagSerializer
 )
 from core.filters import IngredientFilter
-from recipes.models import Favorite, Ingredient, Recipe, Tag
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Follow, User
 
 
@@ -112,3 +115,57 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         Favorite.objects.filter(user=user, recipe=recipe).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=('post', 'delete'))
+    def shopping_cart(self, request, pk=None):
+        """Добавление рецепта в список покупок."""
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, pk=pk)
+        serializer = FavoriteRecipeSerializer(
+            recipe, data=request.data,
+            context={
+                'request': request,
+                'action_name': 'shopping_cart'
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        if request.method == 'POST':
+            ShoppingCart.objects.create(user=user, recipe=recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        ShoppingCart.objects.filter(user=user, recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=('get',))
+    def download_shopping_cart(self, request):
+        """Отдает пользователю список для покупок в виде CSV файла."""
+        user = request.user
+        shopping_cart = ShoppingCart.objects.filter(user=user).select_related(
+            'recipe__ingredients'
+        ).values(
+            'recipe__ingredients__name',
+            'recipe__ingredients__measurement_unit',
+            'recipe__recipe_ingredient__amount'
+        )
+        ingredient_totals = {}
+        for item in shopping_cart:
+            key = (
+                f'{item["recipe__ingredients__name"]} '
+                f'({item["recipe__ingredients__measurement_unit"]})'
+            )
+            if key in ingredient_totals:
+                ingredient_totals[key] += item[
+                    "recipe__recipe_ingredient__amount"
+                ]
+            else:
+                ingredient_totals[key] = item[
+                    "recipe__recipe_ingredient__amount"
+                ]
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = (
+            'attachment; filename="Shopping_cart.csv"'
+        )
+        writer = csv.writer(response)
+        writer.writerow(['Список ингредиентов для покупки:'])
+        for ingredient, amount in ingredient_totals.items():
+            writer.writerow([f'{ingredient} - {amount}'])
+        return response

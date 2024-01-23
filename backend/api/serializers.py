@@ -7,7 +7,7 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredient,
-    ShippingCart,
+    ShoppingCart,
     Tag
 )
 
@@ -218,7 +218,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         if user.is_anonymous:
             return False
-        return ShippingCart.objects.filter(user=user, recipe=obj).exists()
+        return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):

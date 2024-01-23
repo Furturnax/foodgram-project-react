@@ -5,7 +5,7 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredient,
-    ShippingCart,
+    ShoppingCart,
     Tag
 )
 
@@ -93,8 +93,8 @@ class FavoriteAdmin(admin.ModelAdmin):
     ordering = ('user',)
 
 
-@admin.register(ShippingCart)
-class ShippingCartAdmin(admin.ModelAdmin):
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
     """Интерфейс управления списком покупок."""
 
     list_display = (
