@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from api.permissions import IsSubscribed
 from api.serializers import (
+    FavoriteRecipeSerializer,
     FollowSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
@@ -15,7 +16,7 @@ from api.serializers import (
     TagSerializer
 )
 from core.filters import IngredientFilter
-from recipes.models import Ingredient, Recipe, Tag
+from recipes.models import Favorite, Ingredient, Recipe, Tag
 from users.models import Follow, User
 
 
@@ -92,3 +93,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.request.method == 'GET':
             return RecipeReadSerializer
         return RecipeWriteSerializer
+
+    @action(detail=True, methods=('post', 'delete'))
+    def favorite(self, request, pk=None):
+        """Добавление и удаление рецепта из избранного."""
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, pk=pk)
+        serializer = FavoriteRecipeSerializer(
+            recipe, data=request.data,
+            context={
+                'request': request,
+                'action_name': 'favorite'
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        if request.method == 'POST':
+            Favorite.objects.create(user=user, recipe=recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        Favorite.objects.filter(user=user, recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

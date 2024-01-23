@@ -221,6 +221,25 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         return ShippingCart.objects.filter(user=user, recipe=obj).exists()
 
 
+class FavoriteRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для получения короткого рецепта в избранном."""
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
+        read_only_fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
+
+
 class FollowSerializer(serializers.ModelSerializer):
     """Сериализатор для подписки на автора."""
 
@@ -260,12 +279,14 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         """Возвращает рецепты автора."""
-        recipes = Recipe.objects.filter(author=obj)
-        return RecipeReadSerializer(
-            recipes,
-            many=True,
-            context={'request': self.context.get('request')}
-        ).data
+        recipes_limit = int(self.context['request'].query_params.get(
+            'recipes_limit',
+            default=2
+            )
+        )
+        recipes = Recipe.objects.filter(author=obj)[:recipes_limit]
+        serializer = FavoriteRecipeSerializer(recipes, many=True)
+        return serializer.data
 
     def get_recipes_count(self, obj):
         """Возвращает количество рецептов автора."""
