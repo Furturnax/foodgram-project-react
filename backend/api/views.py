@@ -1,8 +1,13 @@
+from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
 from djoser.views import UserViewSet as DjoserUserViewSet
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
+from api.permissions import IsSubscribed
 from api.serializers import (
+    FollowSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
@@ -11,7 +16,7 @@ from api.serializers import (
 )
 from core.filters import IngredientFilter
 from recipes.models import Ingredient, Recipe, Tag
-from users.models import User
+from users.models import Follow, User
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -22,11 +27,37 @@ class UserViewSet(DjoserUserViewSet):
     http_method_names = ('get', 'post', 'delete')
 
     def get_permissions(self):
-        """Дает доступ аутентифицированным пользователям."""
-
-        if self.action in ('me',):
+        """Распределение прав на действия."""
+        if self.request.method == 'DELETE':
+            return (IsSubscribed(),)
+        if self.action in ('me', 'subscriptions', 'subscribe'):
             return (permissions.IsAuthenticated(),)
         return (permissions.AllowAny(),)
+
+    @action(detail=False, methods=('get',))
+    def subscriptions(self, request):
+        """Просмотр своих подписок."""
+        user = self.request.user
+        user_following = User.objects.filter(following__user=user)
+        page = self.paginate_queryset(user_following)
+        serializer = FollowSerializer(
+            page, context={'request': request}, many=True
+        )
+        return self.get_paginated_response(serializer.data)
+
+    @action(detail=True, methods=('post', 'delete'))
+    def subscribe(self, request, id=None):
+        """Подписка и отписка от пользователей."""
+        user = self.request.user
+        author = get_object_or_404(User, id=id)
+        if request.method == 'POST':
+            Follow.objects.create(user=user, following=author)
+            serializer = FollowSerializer(
+                author, context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        Follow.objects.filter(user=user, following=author).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

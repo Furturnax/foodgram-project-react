@@ -119,7 +119,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     @staticmethod
     def create_ingredients(recipe, ingredients):
         """Создает список ингредиентов рецепта."""
-        RecipeIngredient.objects.bulk_create([
+        RecipeIngredient.objects.bulk_create((
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=get_object_or_404(
@@ -128,7 +128,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 ),
                 amount=ingredient['amount']
             ) for ingredient in ingredients
-        ])
+        ),)
 
     def create(self, validated_data):
         """Создает новый рецепт."""
@@ -184,6 +184,18 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',
         )
+        read_only_fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'is_favorited',
+            'is_in_shopping_cart',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+        )
 
     def get_ingredients(self, recipe):
         """Получает ингредиенты рецепта с полем amount."""
@@ -207,3 +219,54 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
         return ShippingCart.objects.filter(user=user, recipe=obj).exists()
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    """Сериализатор для подписки на автора."""
+
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+        read_only_fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+
+    def get_is_subscribed(self, obj):
+        """Проверяет подписку на автора."""
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return Follow.objects.filter(user=user, following=obj).exists()
+
+    def get_recipes(self, obj):
+        """Возвращает рецепты автора."""
+        recipes = Recipe.objects.filter(author=obj)
+        return RecipeReadSerializer(
+            recipes,
+            many=True,
+            context={'request': self.context.get('request')}
+        ).data
+
+    def get_recipes_count(self, obj):
+        """Возвращает количество рецептов автора."""
+        return Recipe.objects.filter(author=obj).count()
