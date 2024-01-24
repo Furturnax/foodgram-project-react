@@ -8,7 +8,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from api.permissions import IsSubscribed
+from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from api.serializers import (
     FavoriteRecipeSerializer,
     FollowSerializer,
@@ -32,8 +32,6 @@ class UserViewSet(DjoserUserViewSet):
 
     def get_permissions(self):
         """Распределение прав на действия."""
-        if self.request.method == 'DELETE':
-            return (IsSubscribed(),)
         if self.action in ('me', 'subscriptions', 'subscribe'):
             return (permissions.IsAuthenticated(),)
         return (permissions.AllowAny(),)
@@ -68,6 +66,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет для работы с тегами."""
 
     http_method_names = ('get',)
+    permission_classes = (IsAdminOrReadOnly,)
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = None
@@ -77,6 +76,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет для работы с ингредиентами."""
 
     http_method_names = ('get',)
+    permission_classes = (IsAdminOrReadOnly,)
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.all()
     pagination_class = None
@@ -88,11 +88,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для работы с рецептами."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
+    permission_classes = (IsAuthorOrReadOnly,)
     serializer_class = RecipeWriteSerializer
     queryset = Recipe.objects.all()
     pagination_class = None
 
     def get_serializer_class(self):
+        """Определяет класс сериализатора в зависимости от типа запроса."""
         if self.request.method == 'GET':
             return RecipeReadSerializer
         return RecipeWriteSerializer
