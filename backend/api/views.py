@@ -8,7 +8,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from core.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from api.serializers import (
     FavoriteRecipeSerializer,
     FollowSerializer,
@@ -98,6 +98,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.request.method == 'GET':
             return RecipeReadSerializer
         return RecipeWriteSerializer
+
+    def get_permissions(self):
+        """Распределение прав на действия."""
+        if self.action in (
+            'favorite',
+            'shopping_cart',
+            'download_shopping_cart'
+        ):
+            return (permissions.IsAuthenticated(),)
+        return (IsAuthorOrReadOnly(),)
 
     @action(detail=True, methods=('post', 'delete'))
     def favorite(self, request, pk=None):

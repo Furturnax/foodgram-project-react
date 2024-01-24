@@ -5,9 +5,8 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
     """Пользовательское разрешение - разрешать только автору."""
 
     def has_permission(self, request, view):
-        if request.method == 'POST':
-            return request.user.is_authenticated
-        return True
+        return (request.user.is_authenticated
+                or request.method in permissions.SAFE_METHODS)
 
     def has_object_permission(self, request, view, obj):
         return (request.method in permissions.SAFE_METHODS
