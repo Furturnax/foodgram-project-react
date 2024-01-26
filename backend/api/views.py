@@ -2,8 +2,8 @@ import csv
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django_filters import rest_framework as filters
 from djoser.views import UserViewSet as DjoserUserViewSet
+from django_filters import rest_framework as filters
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -18,7 +18,7 @@ from api.serializers import (
     UserSerializer,
     TagSerializer
 )
-from core.filters import IngredientFilter
+from core.filters import IngredientFilter, RecipeFilter
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Follow, User
 
@@ -92,6 +92,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeWriteSerializer
     queryset = Recipe.objects.all()
     pagination_class = None
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         """Определяет класс сериализатора в зависимости от типа запроса."""
