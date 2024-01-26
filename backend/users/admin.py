@@ -9,9 +9,24 @@ class UserAdmin(BaseUserAdmin):
     """Интерфейс управления пользователями."""
 
     list_display = (
-        'id', 'username', 'email', 'first_name', 'last_name'
+        'id',
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'is_staff',
+        'is_superuser',
+        'is_active'
     )
-    search_fields = ('username', 'first_name')
+    search_fields = (
+        'username',
+        'first_name',
+        'is_staff',
+        'is_superuser',
+        'is_active'
+    )
+    list_filter = ('username', 'first_name')
+    list_display_links = ('username',)
     ordering = ('-id',)
 
 
@@ -21,3 +36,6 @@ class FollowAdmin(admin.ModelAdmin):
 
     list_display = ('following', 'user')
     search_fields = ('following',)
+    list_filter = ('following', 'user')
+    list_display_links = ('following',)
+    ordering = ('following',)
