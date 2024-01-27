@@ -61,7 +61,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'id',
         'author',
         'name',
-        'image',
+        'image_tag',
         'text',
         'cooking_time',
         'display_ingredients',
@@ -72,16 +72,16 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
     ordering = ('name',)
     inlines = (IngredientInline,)
-    readonly_fields = ('image',)
+    readonly_fields = ('image_tag',)
 
-    def image(self, obj):
+    def image_tag(self, obj):
         """Добавляет изображение в разделе рецепты."""
         if obj.image:
             return mark_safe(
                 f'<img src={obj.image.url} width="80" height="60">'
             )
         return 'Нет изображения'
-    image.short_description = 'Изображение'
+    image_tag.short_description = 'Изображение'
 
     @admin.display(description='Ингредиенты')
     def display_ingredients(self, obj):
