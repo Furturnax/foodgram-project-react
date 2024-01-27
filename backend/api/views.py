@@ -90,7 +90,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthorOrReadOnly,)
     serializer_class = RecipeWriteSerializer
-    queryset = Recipe.objects.all()
+    queryset = (
+        Recipe.objects.select_related('author')
+        .prefetch_related('ingredients', 'tags').all()
+    )
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = RecipeFilter
 

@@ -30,6 +30,9 @@ services:
 
   frontend:
     image: furturnax/foodgram_frontend
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
 
