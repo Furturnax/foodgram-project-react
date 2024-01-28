@@ -98,11 +98,15 @@ class Recipe(models.Model):
             message='Не менее одной минуты.'
         ),),
     )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True
+    )
 
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('-name',)
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return (

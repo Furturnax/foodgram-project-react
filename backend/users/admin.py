@@ -20,12 +20,14 @@ class UserAdmin(BaseUserAdmin):
     )
     search_fields = (
         'username',
+        'email',
         'first_name',
-        'is_staff',
-        'is_superuser',
-        'is_active'
+        'last_name',
     )
-    list_filter = ('username', 'first_name')
+    list_filter = (
+        'first_name',
+        'email'
+    )
     list_display_links = ('username',)
     ordering = ('-id',)
 
@@ -34,8 +36,17 @@ class UserAdmin(BaseUserAdmin):
 class FollowAdmin(admin.ModelAdmin):
     """Интерфейс управления подписками."""
 
-    list_display = ('following', 'user')
-    search_fields = ('following',)
-    list_filter = ('following', 'user')
-    list_display_links = ('following',)
+    list_display = (
+        'following',
+        'user'
+    )
+    search_fields = ('following__username',)
+    list_filter = (
+        'following',
+        'user'
+    )
+    list_display_links = (
+        'following',
+        'user'
+    )
     ordering = ('following',)

@@ -26,8 +26,14 @@ class TagAdmin(admin.ModelAdmin):
         'color',
         'slug'
     )
-    search_fields = ('name', 'color')
-    list_filter = ('name', 'color', 'slug')
+    search_fields = (
+        'name',
+        'slug'
+    )
+    list_filter = (
+        'name',
+        'slug'
+    )
     list_display_links = ('name',)
     ordering = ('name',)
 
@@ -41,8 +47,8 @@ class IngredientAdmin(admin.ModelAdmin):
         'name',
         'measurement_unit'
     )
-    search_fields = ('name', 'measurement_unit')
-    list_filter = ('name', 'measurement_unit')
+    search_fields = ('name',)
+    list_filter = ('name',)
     list_display_links = ('name',)
     ordering = ('name',)
 
@@ -65,14 +71,26 @@ class RecipeAdmin(admin.ModelAdmin):
         'text',
         'cooking_time',
         'display_ingredients',
-        'display_tags'
+        'display_tags',
+        'in_favourite_count'
     )
-    search_fields = ('name', 'author', 'tags', 'cooking_time')
-    list_filter = ('name', 'author', 'tags', 'cooking_time')
+    search_fields = (
+        'name',
+        'author__username',
+        'tags__name'
+    )
+    list_filter = (
+        'name',
+        'author__username',
+        'tags__name'
+    )
     list_display_links = ('name',)
-    ordering = ('name',)
+    ordering = ('-pub_date',)
     inlines = (IngredientInline,)
-    readonly_fields = ('image_tag',)
+    readonly_fields = (
+        'image_tag',
+        'in_favourite_count'
+    )
 
     def image_tag(self, obj):
         """Добавляет изображение в разделе рецепты."""
@@ -82,6 +100,11 @@ class RecipeAdmin(admin.ModelAdmin):
             )
         return 'Нет изображения'
     image_tag.short_description = 'Изображение'
+
+    def in_favourite_count(self, obj):
+        """Возвращает количество рецептов в избранном."""
+        return Favorite.objects.filter(recipe=obj).count()
+    in_favourite_count.short_description = 'В избранном'
 
     @admin.display(description='Ингредиенты')
     def display_ingredients(self, obj):
@@ -105,10 +128,13 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     list_display = (
         'recipe',
         'ingredient',
-        'amount',
+        'amount'
     )
-    search_fields = ('recipe', 'ingredient')
-    list_filter = ('recipe', 'ingredient')
+    search_fields = (
+        'recipe__name',
+        'ingredient__name'
+    )
+    list_filter = ('recipe__name',)
     list_display_links = ('recipe',)
     ordering = ('recipe',)
 
@@ -119,10 +145,16 @@ class FavoriteAdmin(admin.ModelAdmin):
 
     list_display = (
         'user',
-        'recipe',
+        'recipe'
     )
-    search_fields = ('user',)
-    list_filter = ('user', 'recipe')
+    search_fields = (
+        'user__username',
+        'recipe__name'
+    )
+    list_filter = (
+        'user__username',
+        'recipe__name'
+    )
     list_display_links = ('user',)
     ordering = ('user',)
 
@@ -133,9 +165,12 @@ class ShoppingCartAdmin(admin.ModelAdmin):
 
     list_display = (
         'user',
-        'recipe',
+        'recipe'
     )
-    search_fields = ('user',)
-    list_filter = ('user', 'recipe')
+    search_fields = ('user__username',)
+    list_filter = (
+        'user__username',
+        'recipe__name'
+    )
     list_display_links = ('user',)
     ordering = ('user',)
