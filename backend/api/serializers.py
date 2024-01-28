@@ -2,6 +2,7 @@ from django.db.models import F
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -197,9 +198,9 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def get_ingredients(self, recipe):
+    def get_ingredients(self, obj):
         """Получает ингредиенты рецепта с полем amount."""
-        return recipe.ingredients.values(
+        return obj.ingredients.values(
             'id',
             'name',
             'measurement_unit',
@@ -282,8 +283,7 @@ class FollowSerializer(serializers.ModelSerializer):
         recipes_limit = int(self.context['request'].query_params.get(
             'recipes_limit',
             default=2
-            )
-        )
+        ))
         recipes = Recipe.objects.filter(author=obj)[:recipes_limit]
         serializer = FavoriteRecipeSerializer(recipes, many=True)
         return serializer.data

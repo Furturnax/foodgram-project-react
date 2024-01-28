@@ -19,7 +19,7 @@ class IngredientFilter(filters.FilterSet):
 class RecipeFilter(filters.FilterSet):
     """Фильтр для полученяи рецептов."""
     author = filters.CharFilter(
-        field_name='author__username'
+        field_name='author__id'
     )
     tags = filters.ModelMultipleChoiceFilter(
         queryset=Tag.objects.all(),
