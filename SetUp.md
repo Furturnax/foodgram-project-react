@@ -240,7 +240,7 @@ sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/col
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
 ```
 
-+ Загрузить список ингредиентов в бауз данных:
++ Загрузить список ингредиентов в базу данных:
 ```shell script
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_csv
 ```
