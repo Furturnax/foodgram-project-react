@@ -30,9 +30,9 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-+ Установите [Docker compose](https://www.docker.com/) на свой компьютер.
++ Установить [Docker compose](https://www.docker.com/) на свой компьютер.
 
-+ Запустите проект через `docker-compose`:
++ Запустить проект через `docker-compose`:
 ```shell script
 cd foodgram-project-react/infra
 ```
@@ -49,12 +49,11 @@ docker compose -f docker-compose.production.yml up --build -d
 docker compose -f docker-compose.production.yml exec backend python manage.py migrate
 ```
 
-+ Соберите статику:
++ Собрать статику:
 ```shell script
 docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
 ```
 
-+ Скопируйте статику:
 ```shell script
 docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /app/static/
 ```
@@ -69,7 +68,7 @@ docker compose -f docker-compose.production.yml exec backend cp -r /app/collecte
 docker login
 ```
 
-+ Создать образы контейнеров `Backend`, `Frontend` из главной директории в локальном проекте (`BD` и `Nginx` создадутся автоматически):
++ Создать образы контейнеров `Backend`, `Frontend` из главной директории в локальном проекте (`DB` и `Nginx` создадутся автоматически):
 ```shell script
 docker build -t <your-docker-username>/foodgram_backend backend/
 ```
