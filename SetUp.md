@@ -287,7 +287,7 @@ Superuser создан ранее.
 Пожалуйста, не надо делать плохие посты, или потрить, что либо. Оставайтесь хорошими булочками :3
 ```
 # Superuser
-furfurnax@gmail.com
+furturnax@gmail.com
 123123qQq
 
 # Staffuser
