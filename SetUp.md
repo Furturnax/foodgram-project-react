@@ -127,7 +127,7 @@ sudo nano /etc/nginx/sites-enabled/default
 + Добавить конфигурации:
 ```
 server {
-    server_name <your-ip> <your-domen?;
+    server_name <your-ip> <your-domen>;
     server_tokens off;
 
     location / {
