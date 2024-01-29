@@ -30,8 +30,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=200, unique=True, verbose_name='Название тега')),
-                ('color', models.CharField(max_length=7, unique=True, validators=[core.validators.hex_color_validator], verbose_name='Цвет тега')),
-                ('slug', models.SlugField(max_length=200, unique=True, validators=[core.validators.slug_validator], verbose_name='Слаг тега')),
+                ('color', models.CharField(max_length=7, unique=True, verbose_name='Цвет тега')),
+                ('slug', models.SlugField(max_length=200, unique=True, verbose_name='Слаг тега')),
             ],
             options={
                 'verbose_name': 'тег',

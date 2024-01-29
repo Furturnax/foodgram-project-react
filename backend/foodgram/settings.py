@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(
-    dotenv_path='../infra/.env'
+    dotenv_path='../dev/.env'
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,10 +13,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 DEBUG = os.getenv('DJANGO_DEBUG', False) == 'True'
 
-ALLOWED_HOSTS = os.getenv(
-    'DJANGO_ALLOWED_HOSTS',
-    '127.0.0.1,localhost'
-).split(',')
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -29,6 +26,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'django_filters',
+    'colorfield',
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
     'recipes.apps.RecipesConfig',
@@ -142,7 +140,5 @@ DJOSER = {
     'SERIALIZERS': {
         'user': 'api.serializers.UserSerializer',
         'user_list': 'api.serializers.UserSerializer',
-        'user_create': 'api.serializers.UserSerializer',
-        'current_user': 'api.serializers.UserSerializer',
     },
 }

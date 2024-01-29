@@ -57,6 +57,7 @@ class IngredientInline(admin.TabularInline):
     """Интерфейс управления ингредиентами в рецепте."""
     model = RecipeIngredient
     extra = 0
+    min_num = 1
 
 
 @admin.register(Recipe)
@@ -92,6 +93,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'in_favourite_count'
     )
 
+    @admin.display(description='Изображение')
     def image_tag(self, obj):
         """Добавляет изображение в разделе рецепты."""
         if obj.image:
@@ -99,12 +101,11 @@ class RecipeAdmin(admin.ModelAdmin):
                 f'<img src={obj.image.url} width="80" height="60">'
             )
         return 'Нет изображения'
-    image_tag.short_description = 'Изображение'
 
+    @admin.display(description='В избранном')
     def in_favourite_count(self, obj):
         """Возвращает количество рецептов в избранном."""
-        return Favorite.objects.filter(recipe=obj).count()
-    in_favourite_count.short_description = 'В избранном'
+        return obj.favorites.count()
 
     @admin.display(description='Ингредиенты')
     def display_ingredients(self, obj):

@@ -8,6 +8,9 @@ from core.validators import username_validator
 class User(AbstractUser):
     """Модель переопределенного класса User."""
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
+
     email = models.EmailField(
         'Электронная почта',
         max_length=LENGTH_USER_EMAILFIELD,
@@ -31,10 +34,6 @@ class User(AbstractUser):
         'Фамилия',
         max_length=LENGTH_USER_CHARFIELD,
     )
-    password = models.CharField(
-        'Пароль',
-        max_length=LENGTH_USER_CHARFIELD,
-    )
 
     class Meta:
         verbose_name = 'пользователь'
@@ -43,9 +42,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return f'{self.username} - {self.email}'
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
 
 
 class Follow(models.Model):
@@ -79,4 +75,4 @@ class Follow(models.Model):
         )
 
     def __str__(self):
-        return (f'{self.user} подписан на {self.following}')
+        return f'{self.user} подписан на {self.following}'
