@@ -1,6 +1,5 @@
-import csv
-
-from django.http import HttpResponse
+from django.db.models import Exists, OuterRef, Sum
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet as DjoserUserViewSet
 from django_filters import rest_framework as filters
@@ -9,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from api.serializers import (
-    FavoriteRecipeSerializer,
+    ShortRecipeInFollowSerializer,
     FollowSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
@@ -19,7 +18,14 @@ from api.serializers import (
 )
 from core.filters import IngredientFilter, RecipeFilter
 from core.permissions import IsAuthorOrReadOnly
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Tag
+)
 from users.models import Follow, User
 
 
@@ -111,23 +117,57 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return (permissions.IsAuthenticated(),)
         return (IsAuthorOrReadOnly(),)
 
-    @action(detail=True, methods=('post', 'delete'))
-    def favorite(self, request, pk=None):
-        """Добавление и удаление рецепта из избранного."""
+    def get_queryset(self):
+        """Возвращает подзапросы к рецептам."""
         user = self.request.user
+        return (
+            Recipe.objects
+            .select_related('author')
+            .prefetch_related('ingredients', 'tags')
+            .annotate(
+                is_favorited=Exists(
+                    Favorite.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                ),
+                is_in_shopping_cart=Exists(
+                    ShoppingCart.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                )
+            )
+            .all()
+        )
+
+    @action(detail=True, methods=('post',))
+    def favorite(self, request, pk):
+        """Добавление рецепта из избранного."""
         recipe = get_object_or_404(Recipe, pk=pk)
-        serializer = FavoriteRecipeSerializer(
-            recipe, data=request.data,
+        data = {
+            'user': request.user.id,
+            'recipe': recipe.id
+        }
+        serializer = ShortRecipeInFollowSerializer(
+            data=data,
             context={
                 'request': request,
                 'action_name': 'favorite'
             }
         )
         serializer.is_valid(raise_exception=True)
-        if request.method == 'POST':
-            Favorite.objects.create(user=user, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        Favorite.objects.filter(user=user, recipe=recipe).delete()
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @favorite.mapping.delete
+    def destroy_favorite(self, request, pk):
+        favorite_entry = get_object_or_404(
+            Favorite,
+            user=request.user,
+            recipe=get_object_or_404(Recipe, id=pk)
+        )
+        favorite_entry.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=('post', 'delete'))
@@ -135,7 +175,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Добавление рецепта в список покупок."""
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
-        serializer = FavoriteRecipeSerializer(
+        serializer = ShortRecipeInFollowSerializer(
             recipe, data=request.data,
             context={
                 'request': request,
@@ -149,37 +189,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ShoppingCart.objects.filter(user=user, recipe=recipe).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @staticmethod
+    def generate_ingredient_line(ingredient):
+        """Генерирует строку с ингредиентом."""
+        return (
+            f'{ingredient["ingredient__name"]} '
+            f'({ingredient["ingredient__measurement_unit"]}) - '
+            f'{ingredient["amount"]}\n'
+        )
+
     @action(detail=False, methods=('get',))
     def download_shopping_cart(self, request):
-        """Отдает пользователю список для покупок в виде CSV файла."""
-        user = request.user
-        shopping_cart = ShoppingCart.objects.filter(user=user).select_related(
-            'recipe__ingredients'
+        """Отдает пользователю список для покупок в виде TXT файла."""
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__shoppingcart__user=request.user
         ).values(
-            'recipe__ingredients__name',
-            'recipe__ingredients__measurement_unit',
-            'recipe__recipe_ingredient__amount'
-        )
-        ingredient_totals = {}
-        for item in shopping_cart:
-            key = (
-                f'{item["recipe__ingredients__name"]} '
-                f'({item["recipe__ingredients__measurement_unit"]})'
-            )
-            if key in ingredient_totals:
-                ingredient_totals[key] += item[
-                    "recipe__recipe_ingredient__amount"
-                ]
-            else:
-                ingredient_totals[key] = item[
-                    "recipe__recipe_ingredient__amount"
-                ]
-        response = HttpResponse(content_type='text/csv')
+            'ingredient__name',
+            'ingredient__measurement_unit',
+        ).annotate(
+            amount=Sum('amount')
+        ).order_by('ingredient__name')
+        response = FileResponse(content_type='text/plain')
         response['Content-Disposition'] = (
-            'attachment; filename="Shopping_cart.csv"'
+            'attachment; filename="Shopping_cart.txt"'
         )
-        writer = csv.writer(response)
-        writer.writerow(['Список ингредиентов для покупки:'])
-        for ingredient, amount in ingredient_totals.items():
-            writer.writerow([f'{ingredient} - {amount}'])
+        lines = ['Список ингредиентов для покупки:\n']
+        lines.extend(self.generate_ingredient_line(
+            ingredient
+        ) for ingredient in ingredients)
+        response.streaming_content = lines
         return response

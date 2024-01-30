@@ -6,8 +6,8 @@ from core.consts import (
     LENGTH_HEX,
     LENGTH_TAG_AND_INGREDIENT_CHARFIELD,
     MAX_TEXT_RECIPES,
-    MAX_VALUE_VALIDATOR,
     MAX_VALUE_VALIDATOR_INGREDIENTS,
+    MAX_VALUE_VALIDATOR_MINUTES,
     MIN_VALUE_VALIDATOR
 )
 from users.models import User
@@ -107,10 +107,10 @@ class Recipe(models.Model):
                 )
             ),
             MaxValueValidator(
-                MAX_VALUE_VALIDATOR,
+                MAX_VALUE_VALIDATOR_MINUTES,
                 message=(
                     'Максимальное время приготовления '
-                    f'рецепта в минутах - {MAX_VALUE_VALIDATOR}.'
+                    f'рецепта в минутах - {MAX_VALUE_VALIDATOR_MINUTES}.'
                 )
             )
         ),
@@ -198,6 +198,12 @@ class FavoriteShoppingCartModel(models.Model):
 
     class Meta:
         abstract = True
+        constraints = (
+            models.UniqueConstraint(
+                name='%(app_label)s_%(class)s_unique_relationship',
+                fields=('user', 'recipe'),
+            ),
+        )
 
     def __str__(self):
         return f'{self.user} - {self.recipe}'
@@ -206,27 +212,16 @@ class FavoriteShoppingCartModel(models.Model):
 class Favorite(FavoriteShoppingCartModel):
     """Модель избранных рецептов."""
 
-    class Meta:
+    class Meta(FavoriteShoppingCartModel.Meta):
         verbose_name = 'избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
-        default_related_name = 'favorites'
-        constraints = (
-            models.UniqueConstraint(
-                name='%(app_label)s_%(class)s_unique_relationship',
-                fields=('user', 'recipe'),
-            ),
-        )
+        default_related_name = 'favorite'
 
 
 class ShoppingCart(FavoriteShoppingCartModel):
     """Модель списка покупок."""
 
-    class Meta:
+    class Meta(FavoriteShoppingCartModel.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
-        constraints = (
-            models.UniqueConstraint(
-                name='%(app_label)s_%(class)s_unique_relationship',
-                fields=('user', 'recipe'),
-            ),
-        )
+        default_related_name = 'shoppingcart'
