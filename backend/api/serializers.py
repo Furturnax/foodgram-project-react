@@ -5,9 +5,11 @@ from rest_framework import serializers
 from core.consts import MAX_VALUE_VALIDATOR_INGREDIENTS, MIN_VALUE_VALIDATOR
 
 from recipes.models import (
+    Favorite,
     Ingredient,
     Recipe,
     RecipeIngredient,
+    ShoppingCart,
     Tag
 )
 
@@ -75,10 +77,18 @@ class IngredientSerializer(serializers.ModelSerializer):
         )
 
 
-class IngredientAmountSerializer(serializers.ModelSerializer):
+class RecipeIngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для записи ингредиента и количества в рецепт."""
 
-    id = serializers.IntegerField(write_only=True)
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all()
+    )
+    name = serializers.ReadOnlyField(
+        source='ingredient.name'
+    )
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit'
+    )
     amount = serializers.IntegerField(
         min_value=MIN_VALUE_VALIDATOR,
         max_value=MAX_VALUE_VALIDATOR_INGREDIENTS,
@@ -89,9 +99,11 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = Ingredient
+        model = RecipeIngredient
         fields = (
             'id',
+            'name',
+            'measurement_unit',
             'amount',
         )
 
@@ -99,7 +111,7 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
 class RecipeWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания рецепта."""
 
-    ingredients = IngredientAmountSerializer(many=True)
+    ingredients = RecipeIngredientSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
@@ -126,7 +138,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.bulk_create([
             RecipeIngredient(
                 recipe=recipe,
-                ingredient_id=ingredient['id'],
+                ingredient=ingredient['id'],
                 amount=ingredient['amount']
             )
             for ingredient in ingredients
@@ -282,4 +294,50 @@ class FollowSerializer(UserSerializer):
             recipes,
             many=True,
             context=self.context,
+        ).data
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для добавления рецепта в избранное."""
+
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe')
+
+    def validate(self, data):
+        user = self.context['request'].user
+        if user.favorite.filter(recipe=data['recipe']).exists():
+            raise serializers.ValidationError(
+                'Рецепт уже добавлен в избранное.'
+            )
+        return data
+
+    def to_representation(self, instance):
+        """Возвращает сериализованный экземпляр рецепта."""
+        return ShortRecipeInFollowSerializer(
+            instance.recipe,
+            context=self.context
+        ).data
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    """Сериализатор для добавления рецепта в список покупок."""
+
+    class Meta:
+        model = ShoppingCart
+        fields = ('user', 'recipe',)
+
+    def validate(self, data):
+        user = self.context['request'].user
+        if user.shoppingcart.filter(recipe=data['recipe']).exists():
+            raise serializers.ValidationError(
+                'Рецепт уже добавлен в корзину.'
+            )
+        return data
+
+    def to_representation(self, instance):
+        """Возвращает сериализованный экземпляр рецепта."""
+        return ShortRecipeInFollowSerializer(
+            instance.recipe,
+            context=self.context
         ).data

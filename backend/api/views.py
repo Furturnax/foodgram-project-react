@@ -8,7 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from api.serializers import (
-    ShortRecipeInFollowSerializer,
+    FavoriteSerializer,
+    ShoppingCartSerializer,
     FollowSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
@@ -141,56 +142,90 @@ class RecipeViewSet(viewsets.ModelViewSet):
             .all()
         )
 
-    @action(detail=True, methods=('post',))
-    def favorite(self, request, pk):
-        """Добавление рецепта из избранного."""
-        recipe = get_object_or_404(Recipe, pk=pk)
-        data = {
-            'user': request.user.id,
-            'recipe': recipe.id
-        }
-        serializer = ShortRecipeInFollowSerializer(
-            data=data,
+    @staticmethod
+    def write_favorite(serializer, pk, request):
+        """Статический метод добавления рецепта в избранное."""
+        serializer_instance = serializer(
+            data={
+                'user': request.user.id,
+                'recipe': pk
+            },
             context={
                 'request': request,
                 'action_name': 'favorite'
             }
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer_instance.is_valid(raise_exception=True)
+        serializer_instance.save()
+        return serializer_instance.data
+
+    @action(
+        detail=True,
+        methods=['POST'],
+        serializer_class=FavoriteSerializer
+    )
+    def favorite(self, request, pk):
+        """Добавление рецепта в избранное."""
+        response_data = self.write_favorite(
+            self.serializer_class, pk, request
+        )
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
     def destroy_favorite(self, request, pk):
-        favorite_entry = get_object_or_404(
-            Favorite,
+        """Удаление рецепта из избранного."""
+        favorite_instance = Favorite.objects.filter(
             user=request.user,
-            recipe=get_object_or_404(Recipe, id=pk)
+            recipe=pk
         )
-        favorite_entry.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if favorite_instance.exists():
+            favorite_instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=('post', 'delete'))
-    def shopping_cart(self, request, pk=None):
-        """Добавление рецепта в список покупок."""
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        serializer = ShortRecipeInFollowSerializer(
-            recipe, data=request.data,
+    @staticmethod
+    def write_shopping_cart(serializer, pk, request):
+        """Статический метод добавления рецепта в список покупок."""
+        serializer_instance = serializer(
+            data={
+                'user': request.user.id,
+                'recipe': pk
+            },
             context={
                 'request': request,
                 'action_name': 'shopping_cart'
             }
         )
-        serializer.is_valid(raise_exception=True)
-        if request.method == 'POST':
-            ShoppingCart.objects.create(user=user, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        ShoppingCart.objects.filter(user=user, recipe=recipe).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer_instance.is_valid(raise_exception=True)
+        serializer_instance.save()
+        return serializer_instance.data
+
+    @action(
+        detail=True,
+        methods=['POST'],
+        serializer_class=ShoppingCartSerializer
+    )
+    def shopping_cart(self, request, pk):
+        """Добавление рецепта в список покупок."""
+        response_data = self.write_shopping_cart(
+            self.serializer_class, pk, request
+        )
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+    @shopping_cart.mapping.delete
+    def destroy_shopping_cart(self, request, pk):
+        """Удаление рецепта из списка покупок."""
+        shopping_cart_instance = ShoppingCart.objects.filter(
+            user=request.user,
+            recipe=pk
+        )
+        if shopping_cart_instance:
+            shopping_cart_instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
-    def generate_ingredient_line(ingredient):
+    def generate_ingredient_list(ingredient):
         """Генерирует строку с ингредиентом."""
         return (
             f'{ingredient["ingredient__name"]} '
@@ -214,7 +249,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'attachment; filename="Shopping_cart.txt"'
         )
         lines = ['Список ингредиентов для покупки:\n']
-        lines.extend(self.generate_ingredient_line(
+        lines.extend(self.generate_ingredient_list(
             ingredient
         ) for ingredient in ingredients)
         response.streaming_content = lines
