@@ -68,16 +68,15 @@ class UserViewSet(DjoserUserViewSet):
             data=data,
             context={'request': request},
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
     def unsubscribe(self, request, id):
         """Отписка от пользователя."""
         user = request.user
-        subscribe_instance = Follow.objects.filter(user=user)
+        subscribe_instance = Follow.objects.filter(user=user, following=id)
         if subscribe_instance.exists():
             subscribe_instance.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -110,10 +109,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthorOrReadOnly,)
     serializer_class = RecipeWriteSerializer
-    queryset = (
-        Recipe.objects.select_related('author')
-        .prefetch_related('ingredients', 'tags').all()
-    )
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -136,47 +131,59 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Возвращает подзапросы к рецептам."""
         user = self.request.user
-
+        queryset = Recipe.objects.select_related(
+            'author'
+        ).prefetch_related(
+            'ingredients',
+            'tags'
+        )
         if isinstance(user, AnonymousUser):
             return Recipe.objects.all()
-
-        return (
-            Recipe.objects
-            .select_related('author')
-            .prefetch_related('ingredients', 'tags')
-            .annotate(
-                is_favorited=Exists(
-                    Favorite.objects.filter(
-                        user=user,
-                        recipe=OuterRef('pk')
-                    )
-                ),
-                is_in_shopping_cart=Exists(
-                    ShoppingCart.objects.filter(
-                        user=user,
-                        recipe=OuterRef('pk')
-                    )
+        return queryset.annotate(
+            is_favorited=Exists(
+                Favorite.objects.filter(
+                    user=user,
+                    recipe=OuterRef('pk')
+                )
+            ),
+            is_in_shopping_cart=Exists(
+                ShoppingCart.objects.filter(
+                    user=user,
+                    recipe=OuterRef('pk')
                 )
             )
-            .all()
         )
 
     @staticmethod
-    def write_favorite(serializer, pk, request):
-        """Статический метод добавления рецепта в избранное."""
+    def write_recipe(serializer, pk, request):
+        """Статический метод записи рецепта."""
         serializer_instance = serializer(
             data={
                 'user': request.user.id,
                 'recipe': pk
             },
             context={
-                'request': request,
-                'action_name': 'favorite'
+                'request': request
             },
         )
         serializer_instance.is_valid(raise_exception=True)
         serializer_instance.save()
-        return serializer_instance.data
+        return Response(
+            serializer_instance.data,
+            status=status.HTTP_201_CREATED
+        )
+
+    @staticmethod
+    def destroy_recipe(model, pk, request):
+        """Статический метод удаления рецепта."""
+        queryset = model.objects.filter(
+            user=request.user,
+            recipe=pk,
+        )
+        if queryset.exists():
+            queryset.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=True,
@@ -185,41 +192,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk):
         """Добавление рецепта в избранное."""
-        response_data = self.write_favorite(
-            self.serializer_class,
-            pk,
-            request,
-        )
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return self.write_recipe(self.serializer_class, pk, request)
 
     @favorite.mapping.delete
     def destroy_favorite(self, request, pk):
         """Удаление рецепта из избранного."""
-        favorite_instance = Favorite.objects.filter(
-            user=request.user,
-            recipe=pk,
-        )
-        if favorite_instance.exists():
-            favorite_instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    @staticmethod
-    def write_shopping_cart(serializer, pk, request):
-        """Статический метод добавления рецепта в список покупок."""
-        serializer_instance = serializer(
-            data={
-                'user': request.user.id,
-                'recipe': pk
-            },
-            context={
-                'request': request,
-                'action_name': 'shopping_cart'
-            },
-        )
-        serializer_instance.is_valid(raise_exception=True)
-        serializer_instance.save()
-        return serializer_instance.data
+        return self.destroy_recipe(Favorite, pk, request)
 
     @action(
         detail=True,
@@ -228,33 +206,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk):
         """Добавление рецепта в список покупок."""
-        response_data = self.write_shopping_cart(
-            self.serializer_class,
-            pk,
-            request,
-        )
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return self.write_recipe(self.serializer_class, pk, request)
 
     @shopping_cart.mapping.delete
     def destroy_shopping_cart(self, request, pk):
         """Удаление рецепта из списка покупок."""
-        shopping_cart_instance = ShoppingCart.objects.filter(
-            user=request.user,
-            recipe=pk,
-        )
-        if shopping_cart_instance:
-            shopping_cart_instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return self.destroy_recipe(ShoppingCart, pk, request)
 
     @staticmethod
-    def generate_ingredient_list(ingredient):
-        """Генерирует строку с ингредиентом."""
-        return (
-            f'{ingredient["ingredient__name"]} '
-            f'({ingredient["ingredient__measurement_unit"]}) - '
-            f'{ingredient["amount"]}\n'
-        )
+    def generate_ingredient_list(ingredients):
+        """Генерирует список с ингредиентами из строк."""
+        lines = ['Список ингредиентов для покупки:\n']
+        for ingredient in ingredients:
+            lines.append(
+                f'{ingredient["ingredient__name"]} '
+                f'({ingredient["ingredient__measurement_unit"]}) - '
+                f'{ingredient["amount"]}\n'
+            )
+        content = ''.join(lines)
+        return content
 
     @action(detail=False, methods=('get',))
     def download_shopping_cart(self, request):
@@ -267,13 +237,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).annotate(
             amount=Sum('amount')
         ).order_by('ingredient__name')
-        response = FileResponse(content_type='text/plain')
-        response['Content-Disposition'] = (
-            'attachment; filename="Shopping_cart.txt"'
+        content = self.generate_ingredient_list(ingredients)
+        return FileResponse(
+            content, content_type='text/plain',
+            filename="Shopping_cart.txt"
         )
-        lines = ['Список ингредиентов для покупки:\n']
-        lines.extend(self.generate_ingredient_list(
-            ingredient
-        ) for ingredient in ingredients)
-        response.streaming_content = lines
-        return response
