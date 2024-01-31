@@ -73,6 +73,9 @@ python manage.py migrate
 ```shell script
 python manage.py runserver
 ```
+```shell script
+python manage.py createsuperuser
+```
 В `docker` за счет демона контейнеры крутятся, севрер локально запущен. Можно вести разработку.
 
 [Руководство по развёртыванию проекта на удаленном сервере](./SetUpServer.md)
