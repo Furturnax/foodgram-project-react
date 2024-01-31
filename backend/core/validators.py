@@ -14,25 +14,3 @@ def username_validator(value):
             'знаки @/./+/-/_.'
         )
     return value
-
-
-def slug_validator(value):
-    """Валидатор слага на недопустимые символы."""
-    if not re.match(r'^[-a-zA-Z0-9_]+$', value):
-        invalid_characters = re.sub(r'[-a-zA-Z0-9_]', '', value)
-        raise ValidationError(
-            'Недопустимый слаг. '
-            f'Недопустимые символы: {invalid_characters}'
-        )
-    return value
-
-
-def hex_color_validator(value):
-    """Валидатор цвета на недопустимые символы."""
-    if not re.match(r'^#[0-9a-fA-F]{6}$|^#[0-9a-fA-F]{3}$', value):
-        invalid_characters = re.sub(r'[0-9a-fA-F#]', '', value)
-        raise ValidationError(
-            'Недопустимый hex-код. '
-            f'Недопустимые символы: {invalid_characters}'
-        )
-    return value

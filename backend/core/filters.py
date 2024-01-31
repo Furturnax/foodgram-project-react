@@ -8,7 +8,7 @@ class IngredientFilter(filters.FilterSet):
 
     name = filters.CharFilter(
         field_name='name',
-        lookup_expr='icontains'
+        lookup_expr='icontains',
     )
 
     class Meta:
@@ -18,9 +18,7 @@ class IngredientFilter(filters.FilterSet):
 
 class RecipeFilter(filters.FilterSet):
     """Фильтр для полученяи рецептов."""
-    author = filters.CharFilter(
-        field_name='author__id'
-    )
+
     tags = filters.ModelMultipleChoiceFilter(
         queryset=Tag.objects.all(),
         field_name='tags__slug',
@@ -39,7 +37,7 @@ class RecipeFilter(filters.FilterSet):
             'author',
             'tags',
             'is_favorited',
-            'is_in_shopping_cart'
+            'is_in_shopping_cart',
         )
 
     def get_is_favorited(self, queryset, name, value):

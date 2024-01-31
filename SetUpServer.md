@@ -1,67 +1,9 @@
-## Развёртывание проекта:
-+ Клонировать репозиторий и перейти в него в командной строке:
-```shell script
-git clone git@github.com:Furturnax/foodgram-project-react.git
-```
+## Руководство по развёртыванию проекта на удаленном сервере:
 
-```shell script
-cd foodgram-project-react/
-```
+[Руководство по развёртыванию проекта локально](./SetUpLocal.md)
 
-+ Cоздать и активировать виртуальное окружение `(Windows/Bash)`:
-```shell script
-cd backend/
-```
-
-```shell script
-python -m venv venv
-```
-
-```shell script
-source venv/Scripts/activate
-```
-
-+ Установить зависимости из файла `requirements.txt`:
-```shell script
-python -m pip install --upgrade pip
-```
-
-```shell script
-pip install -r requirements.txt
-```
-
-+ Установить [Docker compose](https://www.docker.com/) на свой компьютер.
-
-+ Запустить проект через `docker-compose`:
-```shell script
-cd foodgram-project-react/infra
-```
-+ Создать файл `.env` с переменными окружения в `infra`:
-
-[Примеры переменных окружения](./infra/.env.example)
-
-```shell script
-docker compose -f docker-compose.production.yml up --build -d
-```
-
-+ Выполнить миграции:
-```shell script
-docker compose -f docker-compose.production.yml exec backend python manage.py migrate
-```
-
-+ Собрать статику:
-```shell script
-docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
-```
-
-```shell script
-docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /app/static/
-```
-
-<br>
-
-## Развёртывание на удаленном сервере:
 #### Подготовка Docker образов:
+
 + Включить установленный ранее `Docker`.
 + Залогиниться в свой аккаунт:
 ```shell script
@@ -262,59 +204,4 @@ sudo docker rmi -f $(sudo docker images -q)
 sudo docker pull <your-docker-username>/foodgram_backend
 ```
 
-<br>
-
-## Порядок запросов к API:
-Для работы понадобится программа **Postman**. Она существует в `desktop` и `web` версии. Она удобна функционалом. Либо использовать стандартный интерфейс `DRF` без установки дополнительного ПО. 
-
-Superuser создан ранее.
-
-Получить JWT-токен через **Postman**.  
-+ По адресу https://foodgramdrew.webhop.me/api/auth/token/login/, через POST запрос передать данные в формате `JSON`:
-```
-{
-    "email": "email",
-    "password": "password"
-}
-```
-
-Авторизировать токен во вкладке **Headers**.
-- В разделе **Key** указать `Authorization`;
-- В разделе **Value** указать `Token <auth_token>`;
-- Выполнять запросы к `API`, описанных в документации. 
-
-<br>
-
-## Работа с SPA приложением:
-
-#### Данные для входа:
-Пожалуйста, не надо делать плохие посты, или потрить, что либо. Оставайтесь хорошими булочками :3
-```
-# Superuser
-furturnax@gmail.com
-123123qQq
-
-# Staffuser
-sosogeg@gmail.com
-123123qQq
-
-# Users
-gorgekeln@gmail.com
-123123qQq
-
-annarose@gmail.com
-123123qQq
-
-alisablade@gmail.com
-123123qQq
-
-```
-
-#### Доступные ресурсы:
-https://foodgramdrew.webhop.me/recipes - Основной ресурс.
-
-https://foodgramdrew.webhop.me/admin/ - Административная панель.
-
-https://foodgramdrew.webhop.me/api/ - API.
-
-https://foodgramdrew.webhop.me/api/docs/ - Документация к API.
+[Порядок запросов к API](./SetUpAPI.md)
