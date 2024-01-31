@@ -8,7 +8,7 @@ from core.consts import (
     MAX_TEXT_RECIPES,
     MAX_VALUE_VALIDATOR_INGREDIENTS,
     MAX_VALUE_VALIDATOR_MINUTES,
-    MIN_VALUE_VALIDATOR
+    MIN_VALUE_VALIDATOR,
 )
 from users.models import User
 
@@ -24,7 +24,7 @@ class Tag(models.Model):
     color = ColorField(
         'Цвет тега',
         max_length=LENGTH_HEX,
-        unique=True
+        unique=True,
     )
     slug = models.SlugField(
         'Слаг тега',
@@ -117,7 +117,7 @@ class Recipe(models.Model):
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации',
-        auto_now_add=True
+        auto_now_add=True,
     )
 
     class Meta:

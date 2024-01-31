@@ -2,18 +2,17 @@ from django.db import transaction
 from django.db.models import F
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from core.consts import MAX_VALUE_VALIDATOR_INGREDIENTS, MIN_VALUE_VALIDATOR
 
+from core.consts import MAX_VALUE_VALIDATOR_INGREDIENTS, MIN_VALUE_VALIDATOR
 from recipes.models import (
     Favorite,
     Ingredient,
     Recipe,
     RecipeIngredient,
     ShoppingCart,
-    Tag
+    Tag,
 )
-
-from users.models import User
+from users.models import Follow, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -114,7 +113,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
-        many=True
+        many=True,
     )
     image = Base64ImageField(
         allow_null=False,
@@ -139,7 +138,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=ingredient['id'],
-                amount=ingredient['amount']
+                amount=ingredient['amount'],
             )
             for ingredient in ingredients
         ])
@@ -171,7 +170,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         """Возвращает сериализованный экземпляр рецепта."""
         return RecipeReadSerializer(
             instance,
-            context=self.context
+            context=self.context,
         ).data
 
 
@@ -217,7 +216,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'measurement_unit',
-            amount=F('recipe_ingredient__amount')
+            amount=F('recipe_ingredient__amount'),
         )
 
 
@@ -240,8 +239,8 @@ class ShortRecipeInFollowSerializer(serializers.ModelSerializer):
         )
 
 
-class FollowSerializer(UserSerializer):
-    """Сериализатор для подписки на автора."""
+class SubscriptionsSerializer(UserSerializer):
+    """Сериализатор подписок."""
 
     is_subscribed = serializers.ReadOnlyField()
     recipes = serializers.SerializerMethodField()
@@ -297,6 +296,30 @@ class FollowSerializer(UserSerializer):
         ).data
 
 
+class SubscribeSerializer(serializers.ModelSerializer):
+    """Сериализатор подписки на пользователя."""
+
+    class Meta:
+        model = Follow
+        fields = ('user', 'following')
+
+    def validate(self, data):
+        """Проверяет подписку на самого себя."""
+        user = self.context['request'].user
+        if user == data['following']:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя.'
+            )
+        return data
+
+    def to_representation(self, instance):
+        """Возвращает сериализованный экземпляр подписки."""
+        return SubscriptionsSerializer(
+            instance.following,
+            context=self.context,
+        ).data
+
+
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериализатор для добавления рецепта в избранное."""
 
@@ -305,6 +328,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe')
 
     def validate(self, data):
+        """Проверяет рецепт в избранном."""
         user = self.context['request'].user
         if user.favorite.filter(recipe=data['recipe']).exists():
             raise serializers.ValidationError(
@@ -316,7 +340,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
         """Возвращает сериализованный экземпляр рецепта."""
         return ShortRecipeInFollowSerializer(
             instance.recipe,
-            context=self.context
+            context=self.context,
         ).data
 
 
@@ -328,6 +352,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe',)
 
     def validate(self, data):
+        """Проверяет рецепт в корзине."""
         user = self.context['request'].user
         if user.shoppingcart.filter(recipe=data['recipe']).exists():
             raise serializers.ValidationError(
@@ -339,5 +364,5 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         """Возвращает сериализованный экземпляр рецепта."""
         return ShortRecipeInFollowSerializer(
             instance.recipe,
-            context=self.context
+            context=self.context,
         ).data

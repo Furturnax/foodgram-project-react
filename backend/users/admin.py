@@ -22,17 +22,17 @@ class UserAdmin(BaseUserAdmin):
         'is_superuser',
         'is_active',
         'recipe_count',
-        'following_count'
+        'following_count',
     )
     search_fields = (
         'username',
         'email',
         'first_name',
-        'last_name'
+        'last_name',
     )
     list_filter = (
         'first_name',
-        'email'
+        'email',
     )
     list_display_links = ('username',)
     ordering = ('last_name', 'first_name')
@@ -58,15 +58,15 @@ class FollowAdmin(admin.ModelAdmin):
 
     list_display = (
         'following',
-        'user'
+        'user',
     )
     search_fields = ('following__username',)
     list_filter = (
         'following',
-        'user'
+        'user',
     )
     list_display_links = (
         'following',
-        'user'
+        'user',
     )
     ordering = ('following',)

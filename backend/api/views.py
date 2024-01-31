@@ -1,6 +1,6 @@
+from django.contrib.auth.models import AnonymousUser
 from django.db.models import Exists, OuterRef, Sum
 from django.http import FileResponse
-from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet as DjoserUserViewSet
 from django_filters import rest_framework as filters
 from rest_framework import permissions, status, viewsets
@@ -10,12 +10,13 @@ from rest_framework.response import Response
 from api.serializers import (
     FavoriteSerializer,
     ShoppingCartSerializer,
-    FollowSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
+    SubscribeSerializer,
+    SubscriptionsSerializer,
     UserSerializer,
-    TagSerializer
+    TagSerializer,
 )
 from core.filters import IngredientFilter, RecipeFilter
 from core.permissions import IsAuthorOrReadOnly
@@ -25,7 +26,7 @@ from recipes.models import (
     Recipe,
     RecipeIngredient,
     ShoppingCart,
-    Tag
+    Tag,
 )
 from users.models import Follow, User
 
@@ -49,24 +50,38 @@ class UserViewSet(DjoserUserViewSet):
         user = self.request.user
         user_following = User.objects.filter(following__user=user)
         page = self.paginate_queryset(user_following)
-        serializer = FollowSerializer(
-            page, context={'request': request}, many=True
+        serializer = SubscriptionsSerializer(
+            page,
+            context={'request': request},
+            many=True,
         )
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=True, methods=('post', 'delete'))
-    def subscribe(self, request, id=None):
-        """Подписка и отписка от пользователей."""
-        user = self.request.user
-        author = get_object_or_404(User, id=id)
-        if request.method == 'POST':
-            Follow.objects.create(user=user, following=author)
-            serializer = FollowSerializer(
-                author, context={'request': request}
-            )
+    @action(detail=True, methods=('post',))
+    def subscribe(self, request, id):
+        """Подписка на пользователя."""
+        data = {
+            'user': request.user.id,
+            'following': id
+        }
+        serializer = SubscribeSerializer(
+            data=data,
+            context={'request': request},
+        )
+        if serializer.is_valid():
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        Follow.objects.filter(user=user, following=author).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @subscribe.mapping.delete
+    def unsubscribe(self, request, id):
+        """Отписка от пользователя."""
+        user = request.user
+        subscribe_instance = Follow.objects.filter(user=user)
+        if subscribe_instance.exists():
+            subscribe_instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -113,7 +128,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action in (
             'favorite',
             'shopping_cart',
-            'download_shopping_cart'
+            'download_shopping_cart',
         ):
             return (permissions.IsAuthenticated(),)
         return (IsAuthorOrReadOnly(),)
@@ -121,6 +136,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Возвращает подзапросы к рецептам."""
         user = self.request.user
+
+        if isinstance(user, AnonymousUser):
+            return Recipe.objects.all()
+
         return (
             Recipe.objects
             .select_related('author')
@@ -153,7 +172,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             context={
                 'request': request,
                 'action_name': 'favorite'
-            }
+            },
         )
         serializer_instance.is_valid(raise_exception=True)
         serializer_instance.save()
@@ -161,13 +180,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=['POST'],
+        methods=('post',),
         serializer_class=FavoriteSerializer
     )
     def favorite(self, request, pk):
         """Добавление рецепта в избранное."""
         response_data = self.write_favorite(
-            self.serializer_class, pk, request
+            self.serializer_class,
+            pk,
+            request,
         )
         return Response(response_data, status=status.HTTP_201_CREATED)
 
@@ -176,7 +197,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Удаление рецепта из избранного."""
         favorite_instance = Favorite.objects.filter(
             user=request.user,
-            recipe=pk
+            recipe=pk,
         )
         if favorite_instance.exists():
             favorite_instance.delete()
@@ -194,7 +215,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             context={
                 'request': request,
                 'action_name': 'shopping_cart'
-            }
+            },
         )
         serializer_instance.is_valid(raise_exception=True)
         serializer_instance.save()
@@ -202,13 +223,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=['POST'],
+        methods=('post',),
         serializer_class=ShoppingCartSerializer
     )
     def shopping_cart(self, request, pk):
         """Добавление рецепта в список покупок."""
         response_data = self.write_shopping_cart(
-            self.serializer_class, pk, request
+            self.serializer_class,
+            pk,
+            request,
         )
         return Response(response_data, status=status.HTTP_201_CREATED)
 
@@ -217,7 +240,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Удаление рецепта из списка покупок."""
         shopping_cart_instance = ShoppingCart.objects.filter(
             user=request.user,
-            recipe=pk
+            recipe=pk,
         )
         if shopping_cart_instance:
             shopping_cart_instance.delete()

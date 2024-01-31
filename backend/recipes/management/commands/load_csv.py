@@ -13,6 +13,7 @@ class Command(BaseCommand):
     help = 'Загрузка ингредиентов и тегов из CSV файла.'
 
     def handle(self, *args, **kwargs):
+        """Загружает ингредиенты и теги из CSV файла."""
         csv_files = {
             'ingredients': 'ingredients.csv',
             'tags': 'tags.csv',
@@ -22,7 +23,7 @@ class Command(BaseCommand):
             csv_file_path = os.path.join(
                 settings.BASE_DIR,
                 'data',
-                csv_file_name
+                csv_file_name,
             )
 
             try:

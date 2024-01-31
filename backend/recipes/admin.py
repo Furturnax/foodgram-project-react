@@ -8,7 +8,7 @@ from recipes.models import (
     Recipe,
     RecipeIngredient,
     ShoppingCart,
-    Tag
+    Tag,
 )
 
 admin.site.empty_value_display = 'Не задано'
@@ -24,15 +24,15 @@ class TagAdmin(admin.ModelAdmin):
         'id',
         'name',
         'color',
-        'slug'
+        'slug',
     )
     search_fields = (
         'name',
-        'slug'
+        'slug',
     )
     list_filter = (
         'name',
-        'slug'
+        'slug',
     )
     list_display_links = ('name',)
     ordering = ('name',)
@@ -45,7 +45,7 @@ class IngredientAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
-        'measurement_unit'
+        'measurement_unit',
     )
     search_fields = ('name',)
     list_filter = ('name',)
@@ -73,24 +73,24 @@ class RecipeAdmin(admin.ModelAdmin):
         'cooking_time',
         'display_ingredients',
         'display_tags',
-        'in_favourite_count'
+        'in_favourite_count',
     )
     search_fields = (
         'name',
         'author__username',
-        'tags__name'
+        'tags__name',
     )
     list_filter = (
         'name',
         'author__username',
-        'tags__name'
+        'tags__name',
     )
     list_display_links = ('name',)
     ordering = ('-pub_date',)
     inlines = (IngredientInline,)
     readonly_fields = (
         'image_tag',
-        'in_favourite_count'
+        'in_favourite_count',
     )
 
     @admin.display(description='Изображение')
@@ -129,11 +129,11 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     list_display = (
         'recipe',
         'ingredient',
-        'amount'
+        'amount',
     )
     search_fields = (
         'recipe__name',
-        'ingredient__name'
+        'ingredient__name',
     )
     list_filter = ('recipe__name',)
     list_display_links = ('recipe',)
@@ -146,15 +146,15 @@ class FavoriteAdmin(admin.ModelAdmin):
 
     list_display = (
         'user',
-        'recipe'
+        'recipe',
     )
     search_fields = (
         'user__username',
-        'recipe__name'
+        'recipe__name',
     )
     list_filter = (
         'user__username',
-        'recipe__name'
+        'recipe__name',
     )
     list_display_links = ('user',)
     ordering = ('user',)
@@ -166,12 +166,12 @@ class ShoppingCartAdmin(admin.ModelAdmin):
 
     list_display = (
         'user',
-        'recipe'
+        'recipe',
     )
     search_fields = ('user__username',)
     list_filter = (
         'user__username',
-        'recipe__name'
+        'recipe__name',
     )
     list_display_links = ('user',)
     ordering = ('user',)
