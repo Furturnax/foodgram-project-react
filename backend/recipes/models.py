@@ -6,7 +6,7 @@ from core.consts import (
     LENGTH_HEX,
     LENGTH_TAG_AND_INGREDIENT_CHARFIELD,
     MAX_TEXT_RECIPES,
-    MAX_VALUE_VALIDATOR_INGREDIENTS,
+    MAX_VALUE_VALIDATOR,
     MAX_VALUE_VALIDATOR_MINUTES,
     MIN_VALUE_VALIDATOR,
 )
@@ -157,10 +157,10 @@ class RecipeIngredient(models.Model):
                 )
             ),
             MaxValueValidator(
-                MAX_VALUE_VALIDATOR_INGREDIENTS,
+                MAX_VALUE_VALIDATOR,
                 message=(
                     'Максимальное количество ингредиентов - '
-                    f'{MAX_VALUE_VALIDATOR_INGREDIENTS}.'
+                    f'{MAX_VALUE_VALIDATOR}.'
                 )
             )
         ),
@@ -182,7 +182,7 @@ class RecipeIngredient(models.Model):
         return f'{self.recipe} - {self.ingredient} - {self.amount}'
 
 
-class FavoriteShoppingCartModel(models.Model):
+class UserRecipeModel(models.Model):
     """Абстрактная модель избранных и списка покупок."""
 
     user = models.ForeignKey(
@@ -209,19 +209,19 @@ class FavoriteShoppingCartModel(models.Model):
         return f'{self.user} - {self.recipe}'
 
 
-class Favorite(FavoriteShoppingCartModel):
+class Favorite(UserRecipeModel):
     """Модель избранных рецептов."""
 
-    class Meta(FavoriteShoppingCartModel.Meta):
+    class Meta(UserRecipeModel.Meta):
         verbose_name = 'избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
         default_related_name = 'favorite'
 
 
-class ShoppingCart(FavoriteShoppingCartModel):
+class ShoppingCart(UserRecipeModel):
     """Модель списка покупок."""
 
-    class Meta(FavoriteShoppingCartModel.Meta):
+    class Meta(UserRecipeModel.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
         default_related_name = 'shoppingcart'

@@ -15,37 +15,32 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         """Загружает ингредиенты и теги из CSV файла."""
         csv_files = {
-            'ingredients': 'ingredients.csv',
-            'tags': 'tags.csv',
+            'ingredients': {
+                'file': 'ingredients.csv',
+                'model': Ingredient,
+                'fields': ('name', 'measurement_unit')
+            },
+            'tags': {
+                'file': 'tags.csv',
+                'model': Tag,
+                'fields': ('name', 'color', 'slug')
+            },
         }
-
-        for model_name, csv_file_name in csv_files.items():
+        for model_name, model_info in csv_files.items():
             csv_file_path = os.path.join(
                 settings.BASE_DIR,
-                'data',
-                csv_file_name,
+                'data', model_info['file'],
             )
-
             try:
                 with open(csv_file_path, 'r', encoding='utf-8') as file:
                     reader = csv.reader(file)
-
-                    if model_name == 'ingredients':
-                        items_to_create = [
-                            Ingredient(name=name, measurement_unit=unit)
-                            for name, unit in reader
-                        ]
-                        model_class = Ingredient
-                    elif model_name == 'tags':
-                        items_to_create = [
-                            Tag(name=name, color=color, slug=slug)
-                            for name, color, slug in reader
-                        ]
-                        model_class = Tag
-                    else:
-                        continue
-
-                    model_class.objects.bulk_create(items_to_create)
+                    items_to_create = [
+                        model_info['model'](
+                            **dict(zip(model_info['fields'], row))
+                        )
+                        for row in reader
+                    ]
+                    model_info['model'].objects.bulk_create(items_to_create)
                     self.stdout.write(self.style.SUCCESS(
                         f'Загрузка всех {model_name} выполнена.'
                     ))
