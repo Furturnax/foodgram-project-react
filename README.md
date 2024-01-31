@@ -25,6 +25,7 @@
 - [Gunicorn 20.1.0](https://pypi.org/project/gunicorn/20.1.0/)
 - [Nginx 1.19.3](https://nginx.org/ru/)
 - [Django Extra Field 3.0.2](https://pypi.org/project/django-extra-fields/)
+- [Django Colorfield 0.11.0](https://pypi.org/project/django-colorfield/)
 - [Python dotenv 1.0.0](https://pypi.org/project/python-dotenv/)
 
 <br>
@@ -32,7 +33,11 @@
 ## Запуск проекта :shipit: :
 [Руководство по созданию переменных окружения](./infra/.env.example)
 
-[Руководство по развёртыванию проекта](./SetUp.md)
+[Руководство по развёртыванию проекта локально](./SetUpLocal.md)
+
+[Руководство по развёртыванию проекта на удаленном сервере](./SetUpServer.md)
+
+[Порядок запросов к API](./SetUpAPI.md)
 
 <br>
 
