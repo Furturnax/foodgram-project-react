@@ -1,4 +1,3 @@
-from django.contrib.auth.models import AnonymousUser
 from django.db.models import Exists, OuterRef, Sum
 from django.http import FileResponse
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -137,8 +136,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'ingredients',
             'tags'
         )
-        if isinstance(user, AnonymousUser):
-            return Recipe.objects.all()
+        if user.is_anonymous:
+            return queryset
         return queryset.annotate(
             is_favorited=Exists(
                 Favorite.objects.filter(
@@ -155,8 +154,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @staticmethod
-    def write_recipe(serializer, pk, request):
-        """Статический метод записи рецепта."""
+    def add_to_section(serializer, pk, request):
+        """Статический метод добавления рецепта в раздел."""
         serializer_instance = serializer(
             data={
                 'user': request.user.id,
@@ -174,8 +173,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @staticmethod
-    def destroy_recipe(model, pk, request):
-        """Статический метод удаления рецепта."""
+    def remove_from_section(model, pk, request):
+        """Статический метод удаления рецепта из раздела."""
         queryset = model.objects.filter(
             user=request.user,
             recipe=pk,
@@ -191,13 +190,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer_class=FavoriteSerializer
     )
     def favorite(self, request, pk):
-        """Добавление рецепта в избранное."""
-        return self.write_recipe(self.serializer_class, pk, request)
+        """Добавление рецепта в раздел избранное."""
+        return self.add_to_section(self.serializer_class, pk, request)
 
     @favorite.mapping.delete
     def destroy_favorite(self, request, pk):
-        """Удаление рецепта из избранного."""
-        return self.destroy_recipe(Favorite, pk, request)
+        """Удаление рецепта из раздела избранное."""
+        return self.remove_from_section(Favorite, pk, request)
 
     @action(
         detail=True,
@@ -205,13 +204,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer_class=ShoppingCartSerializer
     )
     def shopping_cart(self, request, pk):
-        """Добавление рецепта в список покупок."""
-        return self.write_recipe(self.serializer_class, pk, request)
+        """Добавление рецепта в раздел список покупок."""
+        return self.add_to_section(self.serializer_class, pk, request)
 
     @shopping_cart.mapping.delete
     def destroy_shopping_cart(self, request, pk):
-        """Удаление рецепта из списка покупок."""
-        return self.destroy_recipe(ShoppingCart, pk, request)
+        """Удаление рецепта из раздела списка покупок."""
+        return self.remove_from_section(ShoppingCart, pk, request)
 
     @staticmethod
     def generate_ingredient_list(ingredients):
