@@ -204,4 +204,48 @@ sudo docker rmi -f $(sudo docker images -q)
 sudo docker pull <your-docker-username>/foodgram_backend
 ```
 
+<br>
+
+## Workflows:
+
+Continuous Integration (CI) и Continuous Deployment (CD) реализовано через `GitHub Actions` 
+
+Для работы проекта необходимо прописать переменные окружения в `Settings/Secrets and variables/Actions/New repository secret`:
+
+```txt
+# имя пользователя в Docker
+NICKNAME
+
+# имя пользователя в DockerHub
+DOCKER_USERNAME    
+
+# пароль пользователя в DockerHub
+DOCKER_PASSWORD    
+
+# ip_address сервера
+SSH_HOST      
+
+# имя пользователя                     
+SSH_USER    
+
+# приватный ssh-ключ (cat ~/.ssh/id_rsa)
+SSH_KEY    
+
+# пароль для ssh-ключа            
+SSH_PASSPHRASE                   
+
+# id телеграм-аккаунта (@userinfobot)
+TELEGRAM_TO      
+
+# токен вышего бота (@BotFather)
+TELEGRAM_TOKEN                 
+```
+
+При `push` в ветку `main` автоматически отрабатывают сценарии:
+
++ `Tests 3.9, 3.10, 3.11` - проверка кода на соответствие стандарту `PEP8`;
++ `Push Docker image to DockerHub` - сборка и доставка докер-образов на DockerHub;
++ `Deploy` - автоматический деплой проекта на рабочий сервер;
++ `Send message` - отправка уведомления в Telegram.
+
 [Порядок запросов к API](./SetUpAPI.md)

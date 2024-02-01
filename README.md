@@ -1,5 +1,7 @@
 # Проект "Foodgram"
 
+![Workflow](https://github.com/furturnax/foodgram-project-react/actions/workflows/main.yml/badge.svg)
+
 Реализация `SPA` приложения для ваших рецептов.
 
 Основные возможности:
