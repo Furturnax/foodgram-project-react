@@ -142,10 +142,14 @@ sudo certbot renew --pre-hook "service nginx stop" --post-hook "service nginx st
 Работа с директорией на удаленном сервере:
 + Создать директорию:
 ```shell script
-mkdir foodgram
+mkdir foodgram/
+```
++ Создать директорию внутри `foodgram`:
+```shell script
+mkdir infra/
 ```
 
-+ Отправить `.env`, `docker-compose.production.yml`, `nginx.conf` из директории `infra` на ваш удаленный сервер используя `SCP`:
++ Отправить `.env`, `docker-compose.production.yml`, `nginx.conf` из директории `infra` на ваш удаленный сервер используя `SCP` в директорию `foodgram/infra/`:
 ```shell script
 scp -i <путь к ключам сервера> .env <login@ip>:<путь к директории на сервере>/.env
 ```
@@ -158,7 +162,7 @@ scp -i <путь к ключам сервера> nginx.conf <login@ip>:<путь
 
 + Перейти в директорию:
 ```shell script
-cd foodgram/
+cd foodgram/infra/
 ```
 Запуск проекта на сервере:
 + Запустить `Docker` контейнеры:
@@ -245,6 +249,7 @@ TELEGRAM_TOKEN
 
 + `Tests 3.9, 3.10, 3.11` - проверка кода на соответствие стандарту `PEP8`;
 + `Push Docker image to DockerHub` - сборка и доставка докер-образов на DockerHub;
++ Безопасное копирование `docker-compose.production.yml` и `nginx.conf`;
 + `Deploy` - автоматический деплой проекта на рабочий сервер;
 + `Send message` - отправка уведомления в Telegram.
 
