@@ -6,6 +6,19 @@ from django.core.management import BaseCommand
 
 from recipes.models import Ingredient, Tag
 
+CSV_ITEMS = {
+    'ingredients': {
+        'file': 'ingredients.csv',
+        'model': Ingredient,
+        'fields': ('name', 'measurement_unit')
+    },
+    'tags': {
+        'file': 'tags.csv',
+        'model': Tag,
+        'fields': ('name', 'color', 'slug')
+    },
+}
+
 
 class Command(BaseCommand):
     """Загрузка ингредиентов из CSV."""
@@ -14,19 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         """Загружает ингредиенты и теги из CSV файла."""
-        csv_files = {
-            'ingredients': {
-                'file': 'ingredients.csv',
-                'model': Ingredient,
-                'fields': ('name', 'measurement_unit')
-            },
-            'tags': {
-                'file': 'tags.csv',
-                'model': Tag,
-                'fields': ('name', 'color', 'slug')
-            },
-        }
-        for model_name, model_info in csv_files.items():
+        for model_name, model_info in CSV_ITEMS.items():
             csv_file_path = os.path.join(
                 settings.BASE_DIR,
                 'data', model_info['file'],
