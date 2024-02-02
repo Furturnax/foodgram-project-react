@@ -33,10 +33,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         """Проверяет подписку на автора."""
-        request = self.context['request'].user
+        user = self.context['request'].user
         return (
-            request.is_authenticated
-            and obj.following.filter(following=obj).exists()
+            user.is_authenticated
+            and obj.following.filter(user=user).exists()
         )
 
 
@@ -336,7 +336,7 @@ class FavoriteShoppingCartSerializer(serializers.ModelSerializer):
             recipe=recipe
         ).exists():
             raise serializers.ValidationError(
-                'Рецепт уже добавлен в выбранный раздел.'
+                f'Рецепт уже добавлен в {self.Meta.model._meta.verbose_name}!'
             )
         return data
 
