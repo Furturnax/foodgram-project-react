@@ -47,12 +47,3 @@ alisablade@gmail.com
 123123qQq
 
 ```
-
-#### Доступные ресурсы:
-https://foodgramdrew.webhop.me/recipes - Основной ресурс.
-
-https://foodgramdrew.webhop.me/admin/ - Административная панель.
-
-https://foodgramdrew.webhop.me/api/ - API.
-
-https://foodgramdrew.webhop.me/api/docs/ - Документация к API.

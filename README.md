@@ -43,6 +43,17 @@
 
 <br>
 
+#### Доступные ресурсы:
+https://foodgramdrew.webhop.me/recipes - Основной ресурс.
+
+https://foodgramdrew.webhop.me/admin/ - Административная панель.
+
+https://foodgramdrew.webhop.me/api/ - API.
+
+https://foodgramdrew.webhop.me/api/docs/ - Документация к API.
+
+<br>
+
 ## Dreamteam:
 
 [GitHub](https://github.com/yandex-praktikum) | Автор проекта - Yandex Practicum  
