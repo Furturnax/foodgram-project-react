@@ -331,22 +331,13 @@ class FavoriteShoppingCartSerializer(serializers.ModelSerializer):
         """Проверяет рецепт в избранном и корзине."""
         user = self.context['request'].user
         recipe = data['recipe']
-        model = self.Meta.model
-
-        if user.favorite.filter(
+        if self.Meta.model.objects.filter(
+            user=user,
             recipe=recipe
-        ).exists() and model == Favorite:
+        ).exists():
             raise serializers.ValidationError(
-                'Рецепт уже добавлен в избранное.'
+                'Рецепт уже добавлен в выбранный раздел.'
             )
-
-        if user.shoppingcart.filter(
-            recipe=recipe
-        ).exists() and model == ShoppingCart:
-            raise serializers.ValidationError(
-                'Рецепт уже добавлен в корзину.'
-            )
-
         return data
 
     def to_representation(self, instance):
